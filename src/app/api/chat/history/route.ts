@@ -34,7 +34,14 @@ async function readChatData(): Promise<{ sessions: ChatSession[] }> {
   try {
     await ensureDataDir()
     const data = await readFile(CHAT_FILE, 'utf-8')
-    return JSON.parse(data)
+    const parsed = JSON.parse(data)
+    if (Array.isArray(parsed)) {
+      return { sessions: parsed }
+    }
+    if (parsed && Array.isArray(parsed.sessions)) {
+      return { sessions: parsed.sessions }
+    }
+    return { sessions: [] }
   } catch (error) {
     // File doesn't exist or is empty
     return { sessions: [] }

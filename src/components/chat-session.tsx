@@ -83,47 +83,12 @@ export function ChatSession({ sessionId: propSessionId, isOpen = false, onToggle
       const data = await response.json()
       if (data.success) {
         setMessages(data.allMessages)
-        
-        // Simulate admin response after a delay
-        setTimeout(() => {
-          simulateAdminResponse(messageToSend)
-        }, 1000 + Math.random() * 2000)
       }
     } catch (error) {
       console.error('Error sending message:', error)
     } finally {
       setIsTyping(false)
     }
-  }
-
-  const simulateAdminResponse = (userMessage: string) => {
-    const responses = [
-      "Thank you for your inquiry. I'll review your message and respond within 24 hours.",
-      "I appreciate you reaching out. I'll get back to you with a detailed response soon.",
-      "Your message has been received. I'll address your questions as soon as possible.",
-      "Thank you for contacting me. I'll review your request and respond promptly.",
-      "I've received your message and will respond during business hours."
-    ]
-
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)]
-    
-    fetch('/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        sessionId,
-        sender: 'admin',
-        message: randomResponse
-      })
-    }).then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          setMessages(data.allMessages)
-        }
-      })
-      .catch(error => console.error('Error sending admin response:', error))
   }
 
   const formatTime = (timestamp: string) => {
@@ -189,8 +154,8 @@ export function ChatSession({ sessionId: propSessionId, isOpen = false, onToggle
             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <MessageCircle size={24} className="text-primary opacity-50" />
               </div>
-              <p className="text-sm">How can I help you today?</p>
-              <p className="text-xs mt-2">Please type your message below</p>
+              <p className="text-sm">No messages yet. Start the conversation below.</p>
+              <p className="text-xs mt-2">Your messages will appear here as you send them.</p>
             </div>
             ) : (
               <AnimatePresence>

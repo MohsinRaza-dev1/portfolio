@@ -35,7 +35,14 @@ async function readChatData(): Promise<{ sessions: ChatSession[] }> {
   try {
     await ensureDataDir()
     const data = await readFile(CHAT_FILE, 'utf-8')
-    return JSON.parse(data)
+    const parsed = JSON.parse(data)
+    if (Array.isArray(parsed)) {
+      return { sessions: parsed }
+    }
+    if (parsed && Array.isArray(parsed.sessions)) {
+      return { sessions: parsed.sessions }
+    }
+    return { sessions: [] }
   } catch (error) {
     // File doesn't exist or is empty
     return { sessions: [] }
@@ -52,52 +59,7 @@ export async function GET(request: NextRequest) {
     let allMessages: ChatMessage[] = []
 
     // Add sample messages if no data exists
-    if (chatData.sessions.length === 0) {
-      const now = new Date()
-      const sampleMessages: ChatMessage[] = [
-        {
-          id: '1',
-          sender: 'admin',
-          message: 'Welcome to our support system! How can I help you today?',
-          timestamp: new Date(now.getTime() - 3600000).toISOString(), // 1 hour ago
-          sessionId: 'sample_session',
-          isPublic: true
-        },
-        {
-          id: '2',
-          sender: 'admin',
-          message: 'We\'re here to assist you with any questions or concerns you may have.',
-          timestamp: new Date(now.getTime() - 3000000).toISOString(), // 50 minutes ago
-          sessionId: 'sample_session',
-          isPublic: true
-        },
-        {
-          id: '3',
-          sender: 'admin',
-          message: 'Feel free to reach out through the contact form above.',
-          timestamp: new Date(now.getTime() - 2400000).toISOString(), // 40 minutes ago
-          sessionId: 'sample_session',
-          isPublic: true
-        },
-        {
-          id: '4',
-          sender: 'admin',
-          message: 'Our team typically responds within 24 business hours.',
-          timestamp: new Date(now.getTime() - 1800000).toISOString(), // 30 minutes ago
-          sessionId: 'sample_session',
-          isPublic: true
-        },
-        {
-          id: '5',
-          sender: 'admin',
-          message: 'Thank you for visiting our website!',
-          timestamp: new Date(now.getTime() - 1200000).toISOString(), // 20 minutes ago
-          sessionId: 'sample_session',
-          isPublic: true
-        }
-      ]
-      allMessages = sampleMessages
-    } else {
+    if (chatData.sessions.length > 0) {
       if (email) {
         // Get conversation history for specific user
         const userEmailForSession = email.replace(/[@.]/g, '_')

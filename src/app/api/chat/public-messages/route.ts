@@ -35,7 +35,14 @@ async function readChatData(): Promise<{ sessions: ChatSession[] }> {
   try {
     await ensureDataDir()
     const data = await readFile(CHAT_FILE, 'utf-8')
-    return JSON.parse(data)
+    const parsed = JSON.parse(data)
+    if (Array.isArray(parsed)) {
+      return { sessions: parsed }
+    }
+    if (parsed && Array.isArray(parsed.sessions)) {
+      return { sessions: parsed.sessions }
+    }
+    return { sessions: [] }
   } catch (error) {
     // File doesn't exist or is empty
     return { sessions: [] }
@@ -48,53 +55,7 @@ export async function GET(request: NextRequest) {
     const chatData = await readChatData()
     const publicMessages: ChatMessage[] = []
     
-    // Add sample messages if no data exists
-    if (chatData.sessions.length === 0) {
-      const now = new Date()
-      const sampleMessages: ChatMessage[] = [
-        {
-          id: '1',
-          sender: 'admin',
-          message: '📢 Welcome to our public announcement board!',
-          timestamp: new Date(now.getTime() - 3600000).toISOString(), // 1 hour ago
-          sessionId: 'public_session',
-          isPublic: true
-        },
-        {
-          id: '2',
-          sender: 'admin',
-          message: 'Our support team is available 24/7 to assist you.',
-          timestamp: new Date(now.getTime() - 3000000).toISOString(), // 50 minutes ago
-          sessionId: 'public_session',
-          isPublic: true
-        },
-        {
-          id: '3',
-          sender: 'admin',
-          message: 'New feature: Live chat support is now available!',
-          timestamp: new Date(now.getTime() - 2400000).toISOString(), // 40 minutes ago
-          sessionId: 'public_session',
-          isPublic: true
-        },
-        {
-          id: '4',
-          sender: 'admin',
-          message: 'Thank you for being a valued member of our community.',
-          timestamp: new Date(now.getTime() - 1800000).toISOString(), // 30 minutes ago
-          sessionId: 'public_session',
-          isPublic: true
-        },
-        {
-          id: '5',
-          sender: 'admin',
-          message: 'Visit our FAQ section for quick answers to common questions.',
-          timestamp: new Date(now.getTime() - 1200000).toISOString(), // 20 minutes ago
-          sessionId: 'public_session',
-          isPublic: true
-        }
-      ]
-      publicMessages.push(...sampleMessages)
-    } else {
+    if (chatData.sessions.length > 0) {
       // Collect all messages and mark admin messages as public
       chatData.sessions.forEach(session => {
         session.messages.forEach(message => {
