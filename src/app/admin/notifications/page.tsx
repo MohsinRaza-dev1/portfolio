@@ -46,43 +46,27 @@ function AdminNotificationsContent() {
     scheduledTime: ''
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (editingNotification) {
-      // Update existing notification in shared context
-      updateNotification(editingNotification.id, {
+      await updateNotification(editingNotification.id, {
         type: formData.type,
         title: formData.title,
-        message: formData.message
+        message: formData.message,
+        targetUsers: formData.targetUsers
       })
-      
       setEditingNotification(null)
     } else {
-      // Create new notification
-      const newNotification = {
-        id: Date.now(),
-        ...formData,
-        status: formData.scheduledTime ? 'scheduled' : 'active',
-        createdAt: new Date().toISOString(),
+      await addNotification({
+        type: formData.type,
+        title: formData.title,
+        message: formData.message,
+        targetUsers: formData.targetUsers,
         createdBy: 'Admin'
-      }
-      // Add directly to shared context
-      
-      // Add to shared notifications for users
-      console.log('Adding notification to shared context:', {
-        type: formData.type,
-        title: formData.title,
-        message: formData.message
       })
-      addNotification({
-        type: formData.type,
-        title: formData.title,
-        message: formData.message
-      })
-      console.log('Notification added to shared context')
     }
-    
+
     setFormData({
       type: 'info',
       title: '',
@@ -105,30 +89,20 @@ function AdminNotificationsContent() {
     setShowCreateForm(true)
   }
 
-  const handleDelete = (id: number) => {
-    // Remove from shared context
-    deleteNotification(id)
+  const handleDelete = async (id: number) => {
+    await deleteNotification(id)
   }
 
-  const handleStatusToggle = (id: number) => {
-    console.log('Toggling status for notification ID:', id)
-    console.log('Current adminNotifications:', adminNotifications)
-    
-    // Find the current notification to determine its current status
+  const handleStatusToggle = async (id: number) => {
     const currentNotification = adminNotifications.find(notif => notif.id === id)
-    console.log('Found notification:', currentNotification)
-    
-    if (currentNotification) {
-      // Toggle between active and inactive status
-      const currentStatus = currentNotification.status || 'active'
-      const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
-      console.log('Current status:', currentStatus, 'New status:', newStatus)
-      
-      updateNotification(id, { status: newStatus })
-      console.log('Status toggle completed')
-    } else {
-      console.log('Notification not found with ID:', id)
+    if (!currentNotification) {
+      console.warn('Notification not found with ID:', id)
+      return
     }
+
+    const currentStatus = currentNotification.status || 'active'
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active'
+    await updateNotification(id, { status: newStatus })
   }
 
   const getTypeIcon = (type: string) => {

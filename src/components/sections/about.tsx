@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
 import { Download, Database, Globe, Smartphone } from 'lucide-react'
@@ -44,16 +45,54 @@ const GitIcon = () => (
   </svg>
 )
 
-const skills = [
-  { name: 'React/Next.js', level: 90, icon: ReactIcon, color: '#61DAFB' },
-  { name: 'TypeScript', level: 85, icon: TypeScriptIcon, color: '#3178C6' },
-  { name: 'Tailwind CSS', level: 88, icon: TailwindIcon, color: '#06B6D4' },
-  { name: 'Prisma ORM', level: 82, icon: PrismaIcon, color: '#0D3558' },
-  { name: 'Node.js', level: 80, icon: NodeIcon, color: '#339933' },
-  { name: 'Git/GitHub', level: 90, icon: GitIcon, color: '#F05032' },
+interface Skill {
+  id: string
+  name: string
+  level: number
+  color: string
+  iconName: string
+}
+
+const defaultSkills: Skill[] = [
+  { id: '1', name: 'React/Next.js', level: 90, color: '#61DAFB', iconName: 'ReactIcon' },
+  { id: '2', name: 'TypeScript', level: 85, color: '#3178C6', iconName: 'TypeScriptIcon' },
+  { id: '3', name: 'Tailwind CSS', level: 88, color: '#06B6D4', iconName: 'TailwindIcon' },
+  { id: '4', name: 'Prisma ORM', level: 82, color: '#0D3558', iconName: 'PrismaIcon' },
+  { id: '5', name: 'Node.js', level: 80, color: '#339933', iconName: 'NodeIcon' },
+  { id: '6', name: 'Git/GitHub', level: 90, color: '#F05032', iconName: 'GitIcon' },
 ]
 
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  ReactIcon,
+  TypeScriptIcon,
+  TailwindIcon,
+  PrismaIcon,
+  NodeIcon,
+  GitIcon,
+}
+
 export function About() {
+  const [skills, setSkills] = useState<Skill[]>(defaultSkills)
+
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        const response = await fetch('/api/skills')
+        if (!response.ok) {
+          throw new Error('Failed to load skills')
+        }
+        const data = await response.json()
+        if (Array.isArray(data.skills)) {
+          setSkills(data.skills)
+        }
+      } catch (error) {
+        console.error('Error loading skills:', error)
+      }
+    }
+
+    fetchSkills()
+  }, [])
+
   const [ref, inView] = useInView({
     triggerOnce: true,
     threshold: 0.1,
@@ -159,7 +198,7 @@ export function About() {
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-2 gap-8">
               {skills.map((skill, index) => {
-                const Icon = skill.icon
+                const Icon = iconMap[skill.iconName] ?? ReactIcon
                 return (
                   <motion.div
                     key={skill.name}

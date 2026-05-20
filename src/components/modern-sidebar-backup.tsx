@@ -147,7 +147,7 @@ export function ModernSidebar() {
 
   const bottomItems = [
     { id: 'notifications', name: 'Notifications', icon: Bell, href: '/notifications', action: 'navigate' },
-    { id: 'users', name: 'Users', icon: Users, href: '/users', action: 'navigate' },
+
     { id: 'help', name: 'Help', icon: HelpCircle, href: '/help', action: 'navigate' },
   ]
 

@@ -13,15 +13,16 @@ export interface Notification {
   status?: string
   createdAt?: string
   createdBy?: string
+  updatedAt?: string
 }
 
 interface NotificationContextType {
   notifications: Notification[]
-  addNotification: (notification: Omit<Notification, 'id' | 'time' | 'read'>) => void
-  updateNotification: (id: number, updates: Partial<Omit<Notification, 'id' | 'time'>>) => void
-  markAsRead: (id: number) => void
-  markAllAsRead: () => void
-  deleteNotification: (id: number) => void
+  addNotification: (notification: Omit<Notification, 'id' | 'time' | 'read'>) => Promise<void>
+  updateNotification: (id: number, updates: Partial<Omit<Notification, 'id' | 'time'>>) => Promise<void>
+  markAsRead: (id: number) => Promise<void>
+  markAllAsRead: () => Promise<void>
+  deleteNotification: (id: number) => Promise<void>
   clearAllNotifications: () => void
   unreadCount: number
 }
@@ -31,115 +32,137 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([])
 
-  // Load notifications from localStorage on mount
-  useEffect(() => {
-    const savedNotifications = localStorage.getItem('notifications')
-    if (savedNotifications) {
-      try {
-        const parsed = JSON.parse(savedNotifications)
-        setNotifications(parsed)
-      } catch (error) {
-        console.error('Failed to load notifications:', error)
+  const mergeReadStates = (serverNotifications: Notification[], stored: Notification[]) => {
+    const storedMap = new Map<number, boolean>(stored.map(n => [n.id, n.read]))
+    return serverNotifications.map(notification => ({
+      ...notification,
+      read: storedMap.has(notification.id) ? storedMap.get(notification.id)! : notification.read ?? false,
+      time: notification.time || 'Just now'
+    }))
+  }
+
+  const loadNotifications = async () => {
+    try {
+      const response = await fetch('/api/notifications')
+      if (!response.ok) {
+        throw new Error('Failed to fetch notifications')
       }
+
+      const data = await response.json()
+      const storedNotifications = localStorage.getItem('notifications')
+      const parsedStored = storedNotifications ? JSON.parse(storedNotifications) : []
+      const merged = mergeReadStates(data.notifications || [], parsedStored)
+      setNotifications(merged)
+    } catch (error) {
+      console.error('Error loading notifications:', error)
     }
+  }
+
+  useEffect(() => {
+    loadNotifications()
   }, [])
 
-  // Save notifications to localStorage whenever they change
   useEffect(() => {
-    console.log('💾 Saving notifications to localStorage:', notifications)
     localStorage.setItem('notifications', JSON.stringify(notifications))
   }, [notifications])
-  
-  // Initial save on mount to ensure persistence
-  useEffect(() => {
-    if (notifications.length > 0) {
-      console.log('� Initial save of notifications to localStorage')
-      localStorage.setItem('notifications', JSON.stringify(notifications))
-    }
-  }, [])
-  
-  // Listen for storage changes from other tabs
+
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'notifications') {
-        console.log('🔄 Storage changed, reloading notifications...')
         const updatedNotifications = JSON.parse(e.newValue || '[]')
         setNotifications(updatedNotifications)
       }
     }
-    
+
     window.addEventListener('storage', handleStorageChange)
-    
     return () => {
       window.removeEventListener('storage', handleStorageChange)
     }
   }, [])
 
-  // Debug: Log notification state on mount
-  useEffect(() => {
-    console.log('NotificationProvider mounted, current notifications:', notifications)
-  }, [notifications])
-
-  const addNotification = (notification: Omit<Notification, 'id' | 'time' | 'read'>) => {
-    console.log('Adding notification to context:', notification)
-    const newNotification: Notification = {
-      ...notification,
-      id: Date.now(),
-      time: 'Just now',
-      read: false
-    }
-    console.log('New notification created:', newNotification)
-    setNotifications(prev => {
-      console.log('Previous notifications:', prev)
-      const updated = [newNotification, ...prev]
-      console.log('Updated notifications:', updated)
-      return updated
-    })
-  }
-
-  const updateNotification = (id: number, updates: Partial<Omit<Notification, 'id' | 'time'>>) => {
-    console.log('Updating notification:', id, updates)
-    setNotifications(prev => {
-      console.log('Current notifications before update:', prev)
-      console.log('Looking for notification with ID:', id)
-      console.log('Available notification IDs:', prev.map(n => n.id))
-      
-      const updated = prev.map(notif => {
-        console.log('Comparing:', notif.id, 'with', id, '=>', notif.id === id)
-        if (notif.id === id) {
-          console.log('Found notification to update, applying updates:', updates)
-          return { ...notif, ...updates, time: 'Just now' }
-        }
-        return notif
+  const addNotification = async (notification: Omit<Notification, 'id' | 'time' | 'read'>) => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(notification)
       })
-      
-      console.log('Notifications after update:', updated)
-      return updated
-    })
+
+      if (!response.ok) {
+        throw new Error('Failed to create notification')
+      }
+
+      const data = await response.json()
+      if (data.notification) {
+        setNotifications(prev => [data.notification, ...prev])
+      }
+    } catch (error) {
+      console.error('Error adding notification:', error)
+    }
   }
 
-  const markAsRead = (id: number) => {
-    console.log('📖 Marking notification as read:', id)
-    setNotifications(prev => {
-      const updated = prev.map(notif => 
-        notif.id === id ? { ...notif, read: true } : notif
+  const updateNotification = async (id: number, updates: Partial<Omit<Notification, 'id' | 'time'>>) => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, updates })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update notification')
+      }
+
+      const data = await response.json()
+      if (data.notifications) {
+        setNotifications(data.notifications)
+      }
+    } catch (error) {
+      console.error('Error updating notification:', error)
+    }
+  }
+
+  const deleteNotification = async (id: number) => {
+    try {
+      const response = await fetch(`/api/notifications?id=${id}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete notification')
+      }
+
+      const data = await response.json()
+      if (data.notifications) {
+        setNotifications(data.notifications)
+      } else {
+        setNotifications(prev => prev.filter(notif => notif.id !== id))
+      }
+    } catch (error) {
+      console.error('Error deleting notification:', error)
+    }
+  }
+
+  const markAsRead = async (id: number) => {
+    setNotifications(prev => prev.map(notif => notif.id === id ? { ...notif, read: true } : notif))
+
+    try {
+      await updateNotification(id, { read: true })
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
+    }
+  }
+
+  const markAllAsRead = async () => {
+    setNotifications(prev => prev.map(notif => ({ ...notif, read: true })))
+
+    try {
+      await Promise.all(
+        notifications.filter(notif => !notif.read).map(notif => updateNotification(notif.id, { read: true }))
       )
-      console.log('📝 Updated notifications after markAsRead:', updated)
-      return updated
-    })
-  }
-
-  const markAllAsRead = () => {
-    console.log('📖 Marking all notifications as read')
-    setNotifications(prev => {
-      const updated = prev.map(notif => ({ ...notif, read: true }))
-      console.log('📝 Updated notifications after markAllAsRead:', updated)
-      return updated
-    })
-  }
-
-  const deleteNotification = (id: number) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id))
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error)
+    }
   }
 
   const clearAllNotifications = () => {

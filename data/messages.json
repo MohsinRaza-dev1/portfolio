@@ -1,3 +1,36 @@
 {
-  "messages": []
+  "messages": [
+    {
+      "id": "1779181499273",
+      "name": "Ayesha Asif",
+      "email": "ayesha.fsd79@gmail.com",
+      "message": "dfhdfuy",
+      "timestamp": "2026-05-19T09:04:59.273Z",
+      "replies": [
+        {
+          "id": "1779181606971",
+          "message": "dfgdfg",
+          "timestamp": "2026-05-19T09:06:46.971Z",
+          "sender": "admin"
+        }
+      ],
+      "read": true
+    },
+    {
+      "id": "1779188025867",
+      "name": "hw2l1aq",
+      "email": "hmohsinkhan@gmail.com",
+      "message": "1sfskdsjf",
+      "timestamp": "2026-05-19T10:53:45.867Z",
+      "read": true,
+      "replies": [
+        {
+          "id": "1779188094117",
+          "message": "yes how djowe",
+          "timestamp": "2026-05-19T10:54:54.117Z",
+          "sender": "admin"
+        }
+      ]
+    }
+  ]
 }

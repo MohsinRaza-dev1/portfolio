@@ -10,6 +10,7 @@ interface Message {
   email: string
   message: string
   timestamp: string
+  read?: boolean
   replies?: Reply[]
 }
 
@@ -123,6 +124,7 @@ export async function GET(request: NextRequest) {
     const translatedMessages = data.messages.map(message => ({
       ...message,
       message: translateMessage(message.message, language),
+      read: message.read ?? false,
       replies: message.replies ? message.replies.map(reply => ({
         ...reply,
         message: translateMessage(reply.message, language)
@@ -166,6 +168,7 @@ export async function POST(request: NextRequest) {
       email,
       message,
       timestamp: new Date().toISOString(),
+      read: false,
       replies: []
     }
 
@@ -186,14 +189,14 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT - Add a reply to a message
+// PUT - Update message read status or add a reply
 export async function PUT(request: NextRequest) {
   try {
-    const { messageId, reply, sender = 'admin' } = await request.json()
+    const { messageId, reply, sender = 'admin', read } = await request.json()
 
-    if (!messageId || !reply) {
+    if (!messageId || (reply === undefined && read === undefined)) {
       return NextResponse.json(
-        { error: 'Message ID and reply are required' },
+        { error: 'Message ID and either reply or read status are required' },
         { status: 400 }
       )
     }
@@ -208,17 +211,24 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const newReply: Reply = {
-      id: Date.now().toString(),
-      message: reply,
-      timestamp: new Date().toISOString(),
-      sender
+    if (read !== undefined) {
+      message.read = Boolean(read)
     }
 
-    if (!message.replies) {
-      message.replies = []
+    let newReply: Reply | null = null
+    if (reply) {
+      newReply = {
+        id: Date.now().toString(),
+        message: reply,
+        timestamp: new Date().toISOString(),
+        sender
+      }
+
+      if (!message.replies) {
+        message.replies = []
+      }
+      message.replies.push(newReply)
     }
-    message.replies.push(newReply)
 
     await writeMessagesData(data)
 

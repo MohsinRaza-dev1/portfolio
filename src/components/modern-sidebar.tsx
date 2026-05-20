@@ -140,8 +140,6 @@ export function ModernSidebar() {
   ]
 
   const secondaryItems = [
-    { id: 'settings', name: 'Settings', icon: Settings, href: '/settings/privacy-security', action: 'navigate' },
-    { id: 'privacy', name: 'Privacy & Security', icon: Shield, href: '/settings/privacy-security', action: 'navigate' },
     { id: 'archive', name: 'Archive', icon: Archive, href: '#archive', action: 'scroll' },
     { id: 'starred', name: 'Starred', icon: Star, href: '#starred', action: 'scroll' },
     { id: 'trash', name: 'Trash', icon: Trash2, href: '#trash', action: 'scroll' },
@@ -149,7 +147,6 @@ export function ModernSidebar() {
 
   const bottomItems = [
     { id: 'notifications', name: 'Notifications', icon: Bell, href: '#notifications', action: 'scroll' },
-    { id: 'users', name: 'Users', icon: Users, href: '/users', action: 'navigate' },
     { id: 'help', name: 'Help', icon: HelpCircle, href: '#help', action: 'scroll' },
   ]
 

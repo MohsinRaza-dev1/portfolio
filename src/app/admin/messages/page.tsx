@@ -17,6 +17,12 @@ interface ContactMessage {
   updatedAt: string
   source: 'contact' | 'question'
   read?: boolean
+  replies?: {
+    id: string
+    message: string
+    timestamp: string
+    sender: 'admin' | 'user'
+  }[]
 }
 
 export default function AdminMessagesPage() {
@@ -62,10 +68,38 @@ export default function AdminMessagesPage() {
           })
         })
       }
-      combinedMessages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+      // Add JSON chat/question messages
+      if (messagesData?.messages && Array.isArray(messagesData.messages)) {
+        messagesData.messages.forEach((msg: any) => {
+          combinedMessages.push({
+            id: msg.id,
+            name: msg.name,
+            email: msg.email,
+            message: msg.message,
+            createdAt: msg.timestamp,
+            updatedAt: msg.timestamp,
+            source: 'question',
+            replies: Array.isArray(msg.replies)
+              ? msg.replies.map((reply: any) => ({
+                  id: reply.id,
+                  message: reply.message,
+                  timestamp: reply.timestamp,
+                  sender: reply.sender
+                }))
+              : []
+          })
+        })
+      }
+      
+      combinedMessages.sort((a, b) => {
+        const dateA = new Date(a.updatedAt || a.createdAt).getTime()
+        const dateB = new Date(b.updatedAt || b.createdAt).getTime()
+        return dateB - dateA
+      })
       
       console.log('📨 Fetched messages:', combinedMessages)
-      console.log('📊 Contact messages count:', contactData.length)
+      console.log('📊 Contact messages count:', Array.isArray(contactData) ? contactData.length : 0)
       console.log('📊 Question messages count:', messagesData?.messages?.length || 0)
       
       setMessages(combinedMessages)
@@ -427,6 +461,16 @@ export default function AdminMessagesPage() {
                     </div>
                   </div>
                   
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-xs uppercase tracking-[0.1em] text-muted-foreground">
+                      {message.source === 'contact' ? 'Contact' : 'Chat'}
+                    </span>
+                    {message.replies && message.replies.length > 0 && (
+                      <span className="text-xs text-green-600 dark:text-green-300">
+                        {message.replies.length} repl{message.replies.length === 1 ? 'y' : 'ies'}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-muted-foreground line-clamp-2">
                     {message.message}
                   </p>
@@ -480,18 +524,42 @@ export default function AdminMessagesPage() {
                     </div>
                   </div>
 
-                  {/* Reply Section */}
-                  {selectedMessage.reply && (
+                  {/* Replies Section */}
+                  {(selectedMessage.replies && selectedMessage.replies.length > 0) || selectedMessage.reply ? (
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Your Reply</label>
-                      <div className="mt-2 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                        <p className="whitespace-pre-wrap">{selectedMessage.reply}</p>
-                        <p className="text-xs text-green-600 dark:text-green-400 mt-2">
-                          Replied on {new Date(selectedMessage.repliedAt!).toLocaleDateString()} at {new Date(selectedMessage.repliedAt!).toLocaleTimeString()}
-                        </p>
+                      <label className="text-sm font-medium text-muted-foreground">Conversation</label>
+                      <div className="mt-3 space-y-3">
+                        {selectedMessage.replies?.map((reply) => (
+                          <div
+                            key={reply.id}
+                            className={`p-4 rounded-lg border ${reply.sender === 'admin' ? 'bg-green-50 border-green-200' : 'bg-secondary/20 border-border'}`}
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                {reply.sender === 'admin' ? 'Admin' : 'Client'}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(reply.timestamp).toLocaleString()}
+                              </span>
+                            </div>
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap">{reply.message}</p>
+                          </div>
+                        ))}
+
+                        {selectedMessage.reply && (
+                          <div className="p-4 rounded-lg border bg-green-50 border-green-200">
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Admin Reply</span>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(selectedMessage.repliedAt || selectedMessage.updatedAt).toLocaleString()}
+                              </span>
+                            </div>
+                            <p className="text-sm leading-relaxed whitespace-pre-wrap">{selectedMessage.reply}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  )}
+                  ) : null}
 
                   {/* Reply Form */}
                   {showReplyForm && (

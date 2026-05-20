@@ -1,0 +1,10 @@
+{
+  "skills": [
+    { "id": "1", "name": "React/Next.js", "level": 90, "color": "#61DAFB", "iconName": "ReactIcon" },
+    { "id": "2", "name": "TypeScript", "level": 85, "color": "#3178C6", "iconName": "TypeScriptIcon" },
+    { "id": "3", "name": "Tailwind CSS", "level": 88, "color": "#06B6D4", "iconName": "TailwindIcon" },
+    { "id": "4", "name": "Prisma ORM", "level": 82, "color": "#0D3558", "iconName": "PrismaIcon" },
+    { "id": "5", "name": "Node.js", "level": 80, "color": "#339933", "iconName": "NodeIcon" },
+    { "id": "6", "name": "Git/GitHub", "level": 90, "color": "#F05032", "iconName": "GitIcon" }
+  ]
+}

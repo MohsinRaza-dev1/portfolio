@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { BarChart3, FileText, MessageSquare, Users, TrendingUp, Calendar, Activity, Camera, Upload, CheckCircle, LogOut, Plus, Edit, User, Mail, Image, Cog, Bell, Sun, Moon } from 'lucide-react'
+import { BarChart3, FileText, MessageSquare, Users, TrendingUp, Calendar, Activity, Camera, Upload, CheckCircle, LogOut, Plus, Edit, User, Mail, Image, Cog, Bell, Sun, Moon, BookOpen } from 'lucide-react'
 import { profileConfig } from '@/config/profile'
 import { useAdmin } from '@/contexts/admin-context'
 import { AdminAuthGuard } from '@/components/admin-auth-guard'
@@ -42,6 +42,7 @@ export default function AdminPage() {
     { name: 'Dashboard', href: '/admin', icon: BarChart3 },
     { name: 'Projects', href: '/admin/projects', icon: FileText },
     { name: 'Blog', href: '/admin/blog', icon: FileText },
+    { name: 'Skills', href: '/admin/skills', icon: BookOpen },
     { name: 'Settings', href: '/admin/settings', icon: Cog },
   ]
 

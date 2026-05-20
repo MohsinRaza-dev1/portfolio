@@ -58,7 +58,6 @@ export async function GET(request: NextRequest) {
     const chatData = await readChatData()
     let allMessages: ChatMessage[] = []
 
-    // Add sample messages if no data exists
     if (chatData.sessions.length > 0) {
       if (email) {
         // Get conversation history for specific user

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Menu, X, Moon, Sun, Home, FileText, MessageSquare, BarChart3, LogOut, Bell, Cog, Settings } from 'lucide-react'
+import { Menu, X, Moon, Sun, Home, FileText, MessageSquare, BarChart3, LogOut, Bell, Cog, Settings, BookOpen } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
@@ -16,6 +16,29 @@ export function AdminNavbar() {
   const { notifications, unreadCount } = useNotifications()
   const { theme, setTheme } = useTheme()
 
+  const fetchMessageCount = async (currentSeenMessages: Set<string> = seenMessages) => {
+    try {
+      const [contactResponse, messagesResponse] = await Promise.all([
+        fetch('/api/contact'),
+        fetch('/api/messages')
+      ])
+      
+      const contactData = await contactResponse.json()
+      const messagesData = await messagesResponse.json()
+      
+      const contactUnreadCount = Array.isArray(contactData)
+        ? contactData.filter((msg: any) => !msg.read && !currentSeenMessages.has(msg.id)).length
+        : 0
+      const questionUnreadCount = messagesData.messages && Array.isArray(messagesData.messages)
+        ? messagesData.messages.filter((msg: any) => !msg.read && !currentSeenMessages.has(msg.id)).length
+        : 0
+      const totalUnreadCount = contactUnreadCount + questionUnreadCount
+      setNewMessageCount(totalUnreadCount)
+    } catch (error) {
+      console.error('Error fetching message count:', error)
+    }
+  }
+
   useEffect(() => {
     setMounted(true)
     // Check authentication status
@@ -26,34 +49,6 @@ export function AdminNavbar() {
     }
     
     checkAuth()
-    
-    // Fetch unread messages count
-    const fetchMessageCount = async () => {
-      try {
-        // Fetch both contact messages and question messages
-        const [contactResponse, messagesResponse] = await Promise.all([
-          fetch('/api/contact'),
-          fetch('/api/messages')
-        ])
-        
-        const contactData = await contactResponse.json()
-        const messagesData = await messagesResponse.json()
-        
-        // Count unread messages excluding seen ones
-        const contactUnreadCount = Array.isArray(contactData) 
-          ? contactData.filter((msg: any) => !msg.read && !seenMessages.has(msg.id)).length 
-          : 0
-        const questionUnreadCount = messagesData.messages && Array.isArray(messagesData.messages)
-          ? messagesData.messages.filter((msg: any) => !msg.read && !seenMessages.has(msg.id)).length
-          : 0
-        const totalUnreadCount = contactUnreadCount + questionUnreadCount
-        
-        setNewMessageCount(totalUnreadCount)
-      } catch (error) {
-        console.error('Error fetching message count:', error)
-      }
-    }
-    
     fetchMessageCount()
     
     // Listen for storage changes (login/logout)
@@ -71,8 +66,12 @@ export function AdminNavbar() {
     const handleMessageSeen = (event: CustomEvent) => {
       const messageId = event.detail.messageId
       console.log('👁️ Message seen:', messageId)
-      setSeenMessages(prev => new Set(prev).add(messageId))
-      fetchMessageCount()
+      setSeenMessages(prev => {
+        const next = new Set(prev)
+        next.add(messageId)
+        fetchMessageCount(next)
+        return next
+      })
     }
     
     window.addEventListener('storage', handleStorageChange)
@@ -90,6 +89,7 @@ export function AdminNavbar() {
     { name: 'Dashboard', href: '/admin', icon: BarChart3 },
     { name: 'Projects', href: '/admin/projects', icon: FileText },
     { name: 'Blog', href: '/admin/blog', icon: FileText },
+    { name: 'Skills', href: '/admin/skills', icon: BookOpen },
     { name: 'Settings', href: '/admin/settings', icon: Cog },
   ]
 
